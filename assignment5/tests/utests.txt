@@ -1,0 +1,97 @@
+Running suite(s): Default
+======================================
+PUBLIC
+  MIN addr string localhost v4
+  Convert 32-bit integer address for localhost
+  into dotted-decimal 127.0.0.1 string format.
+
+  IPv4 address for localhost is '127.0.0.1'
+
+======================================
+PUBLIC
+  MIN get server list localhost
+  Use getaddrinfo() to gather information about localhost
+  for the HTTP protocol with IPv4. Requires network access
+  to get information from DNS.
+
+  IPv4 address for localhost is 0x7f000001
+
+======================================
+PUBLIC
+  MIN serv string localhost
+  Converts a struct addrinfo into a string that contains
+  the transport-layer protocol, IP version, and IP address
+  in the appropriate format.
+
+  Server information for localhost: 'TCP IPv4 127.0.0.1'
+
+======================================
+PUBLIC
+  FULL web client youtube.com
+  Creates a socket and sends a GET / HTTP/1.0 request to
+  youtube.com. Requires network access.
+
+  Request to youtube.com/
+  Received result: HTTP/1.0 200 OK
+  Content type: text/html; charset=ISO-8859-1
+
+======================================
+PRIVATE:
+  MIN addr string localhost v6
+  Convert a localhost addrinfo to IPv6 address
+
+  IPv6 address for localhost is '::1'
+
+======================================
+PRIVATE:
+  MIN get server list localhost v6
+  Convert a localhost addrinfo to IPv6 address. Requires
+  network access to query DNS.
+
+  IPv6 address for localhost is ::1
+
+======================================
+PRIVATE:
+  MIN get server list ns3 dns v4
+  Convert a ns3.jmu.edu addrinfo to IPv4 address. Requires
+  network access to query DNS.
+
+  IPv4 address for ns3.jmu.edu is 134.126.115.46
+
+======================================
+PRIVATE:
+  MIN serv string w3 v4
+  Convert a w3.cs.jmu.edu addrinfo to a string that contains
+  the transport-layer protocol, IP version, and IP address
+  in the appropriate format.
+
+  Server information for w3.cs.jmu.edu: 'TCP IPv4 134.126.20.33'
+
+======================================
+PRIVATE:
+  MIN serv string w3 v6
+  Convert a w3.cs.jmu.edu addrinfo to a string that contains
+  the transport-layer protocol, IP version, and IP address
+  in the appropriate format.
+
+  Server information for w3.cs.jmu.edu: 'no address information'
+
+======================================
+PRIVATE:
+  MIN serv string w3 v4
+  Convert a ns3.jmu.edu addrinfo to a string that contains
+  the transport-layer protocol, IP version, and IP address
+  in the appropriate format.
+
+  Server information for ns3.jmu.edu: 'UDP IPv4 134.126.115.46'
+
+======================================
+PRIVATE
+  FULL web client
+  Creates a socket and sends a GET / HTTP/1.0 request to
+  w3.cs.jmu.edu. Requires network access.
+
+  w3.cs.jmu.edu HTTP has been moved to HTTPS.
+  This should return a 301 Moved Permanently.
+
+100%: Checks: 11, Failures: 0, Errors: 0

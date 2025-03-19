@@ -141,35 +141,83 @@ web (const char *hostname, char *proto, const char *file, char **type,
   // to create a socket connection. When a connection is successfully
   // established, send "GET file HTTP/1.0\r\n\r\n" for the file specified.
   // Write the request to the socket and read the result into the buffer.
-  
-  
-  struct addrinfo *server_list = get_server_list(hostname, proto, true, ipv6);
+  bool tcp = true;
+  if(!strcmp(proto, "53") || !strcmp(proto, "67") || !strcmp(proto, "DNS") || !strcmp(proto, "DHCP"))
+  {
+  	tcp = false;
+  } 
+  struct addrinfo *server_list = get_server_list(hostname, proto, tcp, ipv6);
   struct addrinfo *server = NULL;
   int socketfd = 0;
  	int conn = 0;
  	
+ 	int ai_family = ipv6 ? AF_INET6 : AF_INET;
+ 	int ai_socktype = tcp ? SOCK_STREAM : SOCK_DGRAM;
+ 	
  	for (server = server_list; server != NULL; server = server->ai_next)
  	{
- 		socketfd = socket(AF_INET6, SOCK_STREAM, 0);
- 		struct sockaddr_in *addr = (struct sockaddr_in *)server->ai_addr;
- 		conn = connect(socketfd, addr, server->ai_addrlen);
+ 		if (server->ai_family == ai_family && server->ai_socktype == ai_socktype)
+ 		{
+ 			break;
+ 		}
  	}
+ 	
+ 	if (ipv6)
+ 	{
+ 		socketfd = socket(AF_INET6, SOCK_STREAM, 0);
+ 	}
+ 	
+ 	else
+ 	{
+ 		socketfd = socket(AF_INET, SOCK_STREAM, 0);
+ 	}
+ 	conn = connect(socketfd, server->ai_addr, server->ai_addrlen);
+ 	freeaddrinfo(server_list);
+ 	
  	
  	if (socketfd < 0 || conn < 0)
  	{
  		return NULL;
  	}
- 
+ 	
+ 	
+ 	int length = snprintf(NULL, 0, "GET %s HTTP/1.0\r\n\r\n", file);
+  char * string = malloc(length+1);
+  snprintf(string, length+1, "GET %s HTTP/1.0\r\n\r\n", file);
+  
+  write (socketfd, string, strlen(string));
+  free(string);
+  
   char buffer[BUFFER_MAX_SIZE];  // Should not need more that this
   memset (buffer, 0, sizeof (buffer));
-  strcpy (buffer, "GET file HTTP/1.0\r\n\r\n");
-  write (socketfd, buffer, strlen(buffer));
   
-  ssize_t bytes = read (socketfd, buffer, BUFFER_MAX_SIZE);
+  ssize_t bytes = read (socketfd, buffer, sizeof(buffer));
+  
   if (bytes < 0)
   {
   	return NULL;
   }
   
-  return buffer;
+  char* line = buffer;
+  
+  char *eol = strstr (line, "\r\n");
+  eol[0] = '\0';
+  char* result = strdup(line);
+  
+	//size_t body_length = 0;
+	while (eol != NULL) // While there are more CRLFs
+	{ 
+		eol[0] = '\0'; // Null-terminate each line
+		// Find content length
+		
+		if (! strncmp (line, "Content-Type: ", 14))
+		{ 
+			char *len = strchr (line, ' ') + 1;
+			*type = strdup(strtok(len, "\r\n"));
+		}
+		line = eol + 2; // Move to the next line
+		eol = strstr (line, "\r\n");
+  }
+  
+  return result;
 }

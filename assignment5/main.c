@@ -1,7 +1,7 @@
 /*
  * COMP 3400: Template project driver
  *
- * Name: 
+ * Name: Samuel Costa and An Tran
  */
 
 #include <assert.h>
@@ -60,18 +60,27 @@ main (int argc, char **argv)
       	server_list = get_server_list(domain, protocol, false, ipv6);
       else
       	server_list = get_server_list(domain, protocol, true, ipv6);
-      
-      printf("%s %s: %s\n", domain, protocol, serv_string(server_list));
+      char* string = serv_string(server_list);
+      printf("%s %s: %s\n", domain, protocol, string);
       freeaddrinfo(server_list);
+      free(string);
     }
   else
     {
+    	
       // FULL requirements:
       //   Use web() to create a socket and retrieve the file headers.
       //   Print the result of web() as follows:
       //     "Result: HTTP/1.1 200 OK"
       //   If the type is also set, print it as follows:
       //     "Type: text/html; charset=UTF-8"
+      char * type = NULL;
+      char * result = web (domain, protocol, webfile, &type, ipv6);
+      printf("Result: %s\n", result);
+      printf("Type: %s\n", type);
+      
+      free(result);
+      free(type);
     }
 
   return EXIT_SUCCESS;
