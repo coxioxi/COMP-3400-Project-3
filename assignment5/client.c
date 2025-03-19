@@ -27,26 +27,26 @@ addr_string (struct addrinfo *server)
     return strdup ("no address information");
   else
   {
-  	char* buffer = calloc(INET6_ADDRSTRLEN, sizeof(char));
+  	char* buffer = NULL;
   	
-		if(server -> ai_family = AF_INET6)
+		if(server -> ai_family == AF_INET6)
 		{
 			struct sockaddr_in6 *addr = (struct sockaddr_in6 *)server -> ai_addr;
-			assert(inet_ntop(AF_INET6, &addr->sin6_addr, buffer, INET6_ADDRSTRLEN) != NULL);
 			
-			return buffer;
+			// Allocate buffer for the IP address
+			buffer = calloc(INET6_ADDRSTRLEN, sizeof(char));
+			inet_ntop(AF_INET6, &addr->sin6_addr, buffer, INET6_ADDRSTRLEN);
 		}
-		
-		if (server->ai_family == AF_INET)
+		else //if IP version is equal to IPv4
 		{
 			struct sockaddr_in *addr = (struct sockaddr_in *) server->ai_addr;
-			buffer = inet_ntoa(addr->sin_addr);
 			
-			return buffer;
+			// Allocate buffer for the IP address
+			buffer = calloc(INET_ADDRSTRLEN, sizeof(char));
+			inet_ntop(AF_INET, &addr->sin_addr, buffer, INET_ADDRSTRLEN);
 		}
+		return buffer;
   }
-
-  return NULL;
 }
 
 /* Given the server address info, return a dynamically allocated string with
@@ -68,10 +68,29 @@ serv_string (struct addrinfo *server)
   // Allocate 10 bytes for protocol (TCP or UDP), IP version (IPv4 or
   // IPv6), along with spaces and the ending null byte. In addition,
   // include enough space for an IP address (either v4 or v6).
-
+  
+  char * str = addr_string(server);
+  
+  // Allocating 10 bytes + the length of the IP adress string
+  char* buffer = (char *) calloc(10 + strlen(str), 1);
+ 
   // Now, use strncat() to build the string based on information from
   // the server struct.
-  return NULL;
+  
+  if(server->ai_socktype == SOCK_STREAM)
+  	strcat(buffer, "TCP ");
+  else
+  	strcat(buffer, "UDP ");
+  
+  if(server->ai_family == AF_INET6)
+		strcat(buffer, "IPv6 ");
+  else
+		strcat(buffer, "IPv4 ");
+	
+	strcat(buffer, str);
+	free(str);
+	
+	return buffer;
 }
 
 /* Given a hostname string, use getaddrinfo() to query DNS for the specified
@@ -83,10 +102,29 @@ serv_string (struct addrinfo *server)
 struct addrinfo *
 get_server_list (const char *hostname, const char *proto, bool tcp, bool ipv6)
 {
-  // struct addrinfo *server_list = NULL;
-  // struct addrinfo hints;
-  // memset (&hints, 0, sizeof (hints));
-  return NULL;
+  struct addrinfo *server_list = NULL;
+  struct addrinfo hints;
+	memset (&hints, 0, sizeof (hints));
+	
+	if(tcp)
+	{
+		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_protocol = IPPROTO_TCP;
+	}
+	else
+	{
+		hints.ai_socktype = SOCK_DGRAM;
+		hints.ai_protocol = IPPROTO_UDP;
+	}
+	
+	if(ipv6)
+		hints.ai_family = AF_INET6;
+	else
+		hints.ai_family = AF_INET;
+		
+	getaddrinfo(hostname, proto, &hints, &server_list);	
+
+	return server_list;
 }
 
 /* Use an HTTP/1.0 request to retrieve the requested file with a GET request.

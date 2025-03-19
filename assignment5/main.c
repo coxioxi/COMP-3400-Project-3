@@ -54,6 +54,15 @@ main (int argc, char **argv)
       //   The requested transport-layer protocol should be based on the
       //   requested application-layer protocol. TCP is default, but use
       //   UDP for protocols "53", "67", "dns", or "dhcp".
+      struct addrinfo *server_list = NULL;
+      
+      if(strcmp(protocol, "53") == 0 || strcmp(protocol, "67") == 0 || strcmp(protocol, "dns") == 0 || strcmp(protocol, "dhcp") == 0)
+      	server_list = get_server_list(domain, protocol, false, ipv6);
+      else
+      	server_list = get_server_list(domain, protocol, true, ipv6);
+      
+      printf("%s %s: %s\n", domain, protocol, serv_string(server_list));
+      freeaddrinfo(server_list);
     }
   else
     {
