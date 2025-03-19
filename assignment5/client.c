@@ -141,7 +141,35 @@ web (const char *hostname, char *proto, const char *file, char **type,
   // to create a socket connection. When a connection is successfully
   // established, send "GET file HTTP/1.0\r\n\r\n" for the file specified.
   // Write the request to the socket and read the result into the buffer.
+  
+  
+  struct addrinfo *server_list = get_server_list(hostname, proto, true, ipv6);
+  struct addrinfo *server = NULL;
+  int socketfd = 0;
+ 	int conn = 0;
+ 	
+ 	for (server = server_list; server != NULL; server = server->ai_next)
+ 	{
+ 		socketfd = socket(AF_INET6, SOCK_STREAM, 0);
+ 		struct sockaddr_in *addr = (struct sockaddr_in *)server->ai_addr;
+ 		conn = connect(socketfd, addr, server->ai_addrlen);
+ 	}
+ 	
+ 	if (socketfd < 0 || conn < 0)
+ 	{
+ 		return NULL;
+ 	}
+ 
   char buffer[BUFFER_MAX_SIZE];  // Should not need more that this
   memset (buffer, 0, sizeof (buffer));
-  return NULL;
+  strcpy (buffer, "GET file HTTP/1.0\r\n\r\n");
+  write (socketfd, buffer, strlen(buffer));
+  
+  ssize_t bytes = read (socketfd, buffer, BUFFER_MAX_SIZE);
+  if (bytes < 0)
+  {
+  	return NULL;
+  }
+  
+  return buffer;
 }
