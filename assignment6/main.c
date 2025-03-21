@@ -1,7 +1,7 @@
 /*
  * COMP 3400: Template project driver
  *
- * Name: 
+ * Name: Samuel Costa and An Tran
  */
 
 #include <assert.h>
