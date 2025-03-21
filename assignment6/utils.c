@@ -33,7 +33,8 @@ setup_server (const char *protocol)
   // server. The hints struct is used by getaddrinfo() to determine if the
   // current system can be configured as a server for the requested protocol.
 	hints.ai_protocol = IPPROTO_TCP;
-	hints.ai_socktype = SOCK_DGRAM;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_family = AF_INET;
 	
   if (getaddrinfo (NULL, protocol, &hints, &server_list) != 0)
     return -1;
@@ -95,11 +96,11 @@ get_connection (int socketfd, int *connection)
   // For this assignment, only use IPv4 addresses:
   struct sockaddr_in address;
   memset (&address, 0, sizeof (address));
-  socklen_t addresslen = sizeof (struct sockaddr_in);
+  socklen_t addresslen = 0;
 
   // TODO: Accept the connection request and return the specified values
   // described above.
-	if((*connection = accept(socketfd, &address, &addresslen)) < 0)
+	if((*connection = accept(socketfd, (struct sockaddr *) &address, &addresslen)) < 0)
 	{
 		close(socketfd);
 		return NULL;
@@ -142,33 +143,51 @@ build_response (char *uri, char *version, char **contents)
 
   // TODO: For FULL requirements, don't close the file this soon, as you
   // will need to read in the file contents.
+  char buffer[filesize];
+  memset (&buffer, 0, filesize);
+  
+  ssize_t bytes = read(fd, buffer, filesize);
+  if (bytes < 0)
+  {
+  	return NULL;
+  }
   close (fd);
 
   // TODO: Build the header by resizing and concatenating the strings as
   // needed. See the sample code on the assignment description.
-  char *header = strdup (version);
-  assert (header != NULL);
-  size_t headerlen = strlen (header);
-  char *headers = " 200 OK\r\n"
+  
+  int size = snprintf(NULL, 0, "%s 200 OK\r\n"
     "Content-Type: text/html; charset=UTF-8\r\n"
-    "Content-Length: ";
+    "Content-Length: %ld\r\n\r\n", version, filesize);
+  char *header = malloc(size + 1);
+  assert (header != NULL);
+  snprintf(header, size+1, "%s 200 OK\r\n"
+    "Content-Type: text/html; charset=UTF-8\r\n"
+    "Content-Length: %ld\r\n\r\n", version, filesize);
+  
   // Create a 21-character buffer to store the file size as a string (use
   // snprintf() to convert the size_t into a char*). We can safely assume the
   // string version while fit, as size_t is a 64-bit value that has a maximum
   // value of 18,446,744,073,709,551,615.
-  char size_as_string[21];
-  memset (size_as_string, 0, 21);
 
   // TODO: Reallocate the header pointer to append the file's size (as a
   // content-length string) and the CRLF characters. Use the realloc-strncat
   // model shown above. For FULL requirements, also append the
   // "Connection: close\r\n" for HTTP/1.1 requests and the file contents.
-
+	
+	if (strcmp(version, "HTTP/1.1"))
+		{
+		 	header = strcat(header, "HTTP/1.0 404 Not Found\r\n\r\n");
+  	}
+	
   // TODO: For FULL requirements, replace this string with the contents
   // read in from the file:
-  *contents = "<html>\n  <head>\n    <title>Success!</title>\n"
-    "  </head>\n\n  <body>\n    <h2>It <i>really</i> "
-    "works!</h2>\n  </body>\n</html>\n";
-  
-  return NULL;
+	char *eoh = strstr (buffer, "\r\n\r\n");
+	eoh[2] = '\0';
+	
+	int length = strlen(eoh + 4);
+	*contents = malloc(length + 1);
+	strcpy(*contents, eoh + 4);
+	
+  return header;
 }
