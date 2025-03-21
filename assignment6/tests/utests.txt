@@ -1,0 +1,18 @@
+Running suite(s): Default
+0%: Checks: 3, Failures: 3, Errors: 0
+public.c:35:F:Public:MIN_build_response_header:0: Assertion 'header == expected' failed: header == (null), expected == "HTTP/1.0 200 OK
+Content-Type: text/html; charset=UTF-8
+Content-Length: 119
+
+"
+public.c:59:F:Public:FULL_build_response_header_v1:0: Assertion 'header == expected' failed: header == (null), expected == "HTTP/1.1 200 OK
+Content-Type: text/html; charset=UTF-8
+Content-Length: 119
+Connection: close
+
+"
+public.c:102:F:Public:FULL_build_response_index:0: Assertion 'header == expected' failed: header == (null), expected == "HTTP/1.0 200 OK
+Content-Type: text/html; charset=UTF-8
+Content-Length: 119
+
+"
