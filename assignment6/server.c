@@ -12,6 +12,8 @@
 
 #include "utils.h"
 
+#define WHITESPACE " \t\r\n"
+
 /* Basic framework for a web server than can handle a single request, then
    shuts down. Looks for files in the srv_root directory.
  */
@@ -39,7 +41,19 @@ serve_web (char *protocol)
   char buffer[BUFFER_SIZE];
   memset (&buffer, 0, BUFFER_SIZE);
 
+	ssize_t bytes = read(socketfd, buffer, BUFFER_SIZE);
+	
+	if (bytes < 0)
+	{
+		shutdown (socketfd, SHUT_RDWR);
+		close(socketfd);
+		
+		shutdown (connection, SHUT_RDWR);
+		close(connection);
+		return NULL;
+	}
 
+//NOT DONE
   // TODO: Look at the first line of the request to get the URI and the
   // HTTP version. For MIN: anything other than a GET request for
   // "/index.html" should be considered a non-existent file that will
@@ -53,8 +67,17 @@ serve_web (char *protocol)
   char *version = "HTTP/1.0";
   char *uri = "/index.html";
 
+	bool valid = true;
+	char *token = strtok (buffer, WHITESPACE);
+	
+	if (!strncmp (token, "GET", 4))
+  {
+    valid = false;
+  }
+  
+  token = strtok (NULL, WHITESPACE);
+   
   printf ("GET Request for %s using %s\n", uri, version);
-
   // Prepend "srv_root" to the beginnging of the URI to get the full
   // URI location, such as srv_root/index.html.
   char *uri_loc = strdup ("srv_root");
@@ -63,7 +86,13 @@ serve_web (char *protocol)
   strncat (uri_loc, uri, length - strlen (uri_loc));
 
   char *contents = NULL;
-  char *header = build_response (uri_loc, version, &contents);
+  char *header = NULL;
+  
+  if (valid)
+  {
+  	header = build_response (uri_loc, version, &contents);
+  }
+  
   // TODO: If the value returned from build_response() is not NULL, then
   // write the header and contents into the socket. If the returned header
   // is NULL, send a 404 based on the HTTP version (HTTP/1.1 only required
@@ -71,9 +100,33 @@ serve_web (char *protocol)
   //      "HTTP/1.0 404 Not Found\r\n\r\n";
   //      "HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n";
 
+	if (header)
+	{
+		write(socketfd, header, strlen(header));
+		write(socketfd, contents, strlen(contents));
+	}
+	else
+	{
+		if (strcmp(version, "HTTP/1.0"))
+		{
+		 	header = strdup("HTTP/1.0 404 Not Found\r\n\r\n");
+  	}
+  	else
+  	{
+  		header = strdup("HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n");
+  	}
+	}
   // TODO: Free the headers and contents, shutdown and close both
   // sockets, return the URI of the request (possibly modified to
   // include "index.html", but not including the srv_root).
+  free(header);
+  free(contents);
   
-  return NULL;
+  shutdown (socketfd, SHUT_RDWR);
+  close(socketfd);
+	
+	shutdown (connection, SHUT_RDWR);
+  close(connection);
+  
+  return uri;
 }
