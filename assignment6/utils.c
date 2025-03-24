@@ -62,8 +62,9 @@ setup_server (const char *protocol)
       setsockopt(socketfd, SOL_SOCKET, SO_RCVTIMEO, (const void *) &timeout, sizeof(timeout));
       
       if(bind(socketfd, server->ai_addr, server->ai_addrlen) == 0)
+      {
       	break;
-      	
+      }	
       close(socketfd);
       socketfd = -1;
     }
@@ -76,8 +77,9 @@ setup_server (const char *protocol)
   freeaddrinfo(server_list);
   
   if(socketfd > 0)
+  {
   	listen(socketfd, 0);
-
+	}
   return socketfd;
 }
 
@@ -100,12 +102,15 @@ get_connection (int socketfd, int *connection)
 
   // TODO: Accept the connection request and return the specified values
   // described above.
-	if((*connection = accept(socketfd, (struct sockaddr *) &address, &addresslen)) < 0)
+	
+	*connection = accept(socketfd, (struct sockaddr *)&address, &addresslen);
+	
+	if(*connection < 0)
 	{
 		close(socketfd);
 		return NULL;
 	}
-  
+	
   return inet_ntoa(address.sin_addr);
 }
 
@@ -156,15 +161,18 @@ build_response (char *uri, char *version, char **contents)
   // TODO: Build the header by resizing and concatenating the strings as
   // needed. See the sample code on the assignment description.
   
-  int size = snprintf(NULL, 0, "%s 200 OK\r\n"
-    "Content-Type: text/html; charset=UTF-8\r\n"
-    "Content-Length: %ld\r\n\r\n", version, filesize);
-  char *header = malloc(size + 1);
-  assert (header != NULL);
-  snprintf(header, size+1, "%s 200 OK\r\n"
-    "Content-Type: text/html; charset=UTF-8\r\n"
-    "Content-Length: %ld\r\n\r\n", version, filesize);
-  
+  char *header = NULL;
+  if (!strcmp(version, "HTTP/1.0"))
+  {
+	  int size = snprintf(NULL, 0, "%s 200 OK\r\n"
+		 "Content-Type: text/html; charset=UTF-8\r\n"
+		 "Content-Length: %ld\r\n\r\n", version, filesize);
+	  header = malloc(size + 1);
+	  assert (header != NULL);
+	  snprintf(header, size+1, "%s 200 OK\r\n"
+		 "Content-Type: text/html; charset=UTF-8\r\n"
+		 "Content-Length: %ld\r\n\r\n", version, filesize);
+  }
   // Create a 21-character buffer to store the file size as a string (use
   // snprintf() to convert the size_t into a char*). We can safely assume the
   // string version while fit, as size_t is a 64-bit value that has a maximum
@@ -175,19 +183,25 @@ build_response (char *uri, char *version, char **contents)
   // model shown above. For FULL requirements, also append the
   // "Connection: close\r\n" for HTTP/1.1 requests and the file contents.
 	
-	if (strcmp(version, "HTTP/1.1"))
-		{
-		 	header = strcat(header, "HTTP/1.0 404 Not Found\r\n\r\n");
-  	}
+	else
+	{
+		int size = snprintf(NULL, 0, "%s 200 OK\r\n"
+		 "Content-Type: text/html; charset=UTF-8\r\n"
+		 "Content-Length: %ld\r\n"
+		 "Connection: close\r\n\r\n", version, filesize);
+	  header = malloc(size + 1);
+	  assert (header != NULL);
+	  snprintf(header, size+1, "%s 200 OK\r\n"
+		 "Content-Type: text/html; charset=UTF-8\r\n"
+		 "Content-Length: %ld\r\n"
+		 "Connection: close\r\n\r\n", version, filesize);
+	}
 	
   // TODO: For FULL requirements, replace this string with the contents
   // read in from the file:
-	char *eoh = strstr (buffer, "\r\n\r\n");
-	eoh[2] = '\0';
 	
-	int length = strlen(eoh + 4);
-	*contents = malloc(length + 1);
-	strcpy(*contents, eoh + 4);
+	*contents = malloc(filesize + 1);
+	strcpy(*contents, buffer);
 	
   return header;
 }
