@@ -41,7 +41,8 @@ serve_web (char *protocol)
   char buffer[BUFFER_SIZE];
   memset (&buffer, 0, BUFFER_SIZE);
 
-	ssize_t bytes = read(socketfd, buffer, BUFFER_SIZE);
+//ssize_t bytes = 0;
+	ssize_t bytes = read(connection, buffer, BUFFER_SIZE);
 	
 	if (bytes < 0)
 	{
@@ -53,7 +54,6 @@ serve_web (char *protocol)
 		return NULL;
 	}
 
-//NOT DONE
   // TODO: Look at the first line of the request to get the URI and the
   // HTTP version. For MIN: anything other than a GET request for
   // "/index.html" should be considered a non-existent file that will
@@ -64,20 +64,28 @@ serve_web (char *protocol)
   // pointer to "GET". Then, calling it as strtok (NULL, " "); would return
   // a pointer to the URI. For the third call, replace the second argument
   // with "\r", as you want to split the buffer at the carriage return.
-  char *version = "HTTP/1.0";
-  char *uri = "/index.html";
+  
+  char *version = NULL;
+  char *uri = NULL;
 
-	bool valid = true;
 	char *token = strtok (buffer, WHITESPACE);
 	
 	if (!strncmp (token, "GET", 4))
   {
-    valid = false;
+  	token = strtok (NULL, WHITESPACE);
+  	uri = token;
+  	
+  	token = strtok (NULL, "\r");
+  	version = token;
   }
   
-  token = strtok (NULL, WHITESPACE);
-   
+  if (!strcmp(uri, "/"))
+  	{
+  		uri = "/index.html";
+  	}
+  
   printf ("GET Request for %s using %s\n", uri, version);
+ 
   // Prepend "srv_root" to the beginnging of the URI to get the full
   // URI location, such as srv_root/index.html.
   char *uri_loc = strdup ("srv_root");
@@ -88,10 +96,8 @@ serve_web (char *protocol)
   char *contents = NULL;
   char *header = NULL;
   
-  if (valid)
-  {
-  	header = build_response (uri_loc, version, &contents);
-  }
+  header = build_response (uri_loc, version, &contents);
+  
   
   // TODO: If the value returned from build_response() is not NULL, then
   // write the header and contents into the socket. If the returned header
@@ -102,23 +108,26 @@ serve_web (char *protocol)
 
 	if (header)
 	{
-		write(socketfd, header, strlen(header));
-		write(socketfd, contents, strlen(contents));
+		write(connection, header, strlen(header));
+		write(connection, contents, strlen(contents));
 	}
 	else
 	{
-		if (strcmp(version, "HTTP/1.0"))
+		if (!strcmp(version, "HTTP/1.0"))
 		{
 		 	header = strdup("HTTP/1.0 404 Not Found\r\n\r\n");
+		 	write(connection, header, strlen(header));
   	}
   	else
   	{
   		header = strdup("HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n");
+  		write(connection, header, strlen(header));
   	}
 	}
   // TODO: Free the headers and contents, shutdown and close both
   // sockets, return the URI of the request (possibly modified to
   // include "index.html", but not including the srv_root).
+  
   free(header);
   free(contents);
   
@@ -128,5 +137,6 @@ serve_web (char *protocol)
 	shutdown (connection, SHUT_RDWR);
   close(connection);
   
-  return uri;
+  
+  return strdup(uri);
 }
