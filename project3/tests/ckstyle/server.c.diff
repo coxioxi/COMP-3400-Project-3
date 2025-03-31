@@ -1,0 +1,11 @@
+--- ../server.c	2021-03-25 10:56:23.000000000 -0400
++++ ckstyle/server.c.gnu	2025-03-31 12:44:59.845912011 -0400
+@@ -21,7 +21,7 @@
+   char *boundary = NULL;
+   char *body = NULL;
+   ssize_t size = retrieve_request (connfd, &method, &uri, &query, &version,
+-                                  &boundary, &body);
++                                   &boundary, &body);
+   if (size < 0)
+     {
+       // Ignore certain types of request (such as favicon.ico)

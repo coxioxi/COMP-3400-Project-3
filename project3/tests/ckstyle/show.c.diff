@@ -1,0 +1,77 @@
+--- ../cgi-src/show.c	2025-03-27 14:07:56.952888385 -0400
++++ ckstyle/show.c.gnu	2025-03-31 12:44:59.793912506 -0400
+@@ -17,7 +17,7 @@
+           "sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/"
+           "iJTQUOhcWr7x9JvoRxT2MZw1T\" crossorigin=\"anonymous\" />\n");
+   printf ("  </head>\n\n");
+-  
++
+   // These variables can be read from the environment using getenv().
+   char *db = NULL;
+   char *record = NULL;
+@@ -51,34 +51,39 @@
+   //        </div>
+   //      </div>
+   //    </body>
+-  
+-  int fd = open("data/data.txt", O_RDONLY);
+-  
+-  char *buffer = calloc(256, sizeof(char));
+-  ssize_t bytes = read(fd, buffer, sizeof(buffer));
+-  
++
++  int fd = open ("data/data.txt", O_RDONLY);
++
++  char *buffer = calloc (256, sizeof (char));
++  ssize_t bytes = read (fd, buffer, sizeof (buffer));
++
+   for (int i = 0; i < bytes; i++)
+-  	printf ("%d\n", buffer[i]);
+-  
++    printf ("%d\n", buffer[i]);
++
++  close (fd);
+ 
+-  close(fd);
+-  
+-  printf("  <body>\n");
+-  printf("    <div class=\"container\">\n");
+-  printf("      <br />\n");
+-  printf("      <h2 class=\"mb-0\">Database Records</h2>\n");
+-  printf("      <div class=\"row\">\n");
+-  printf("        <div class=\"col py-md-2 border bg-light\">bootstrap.html</div>\n");
+-  printf("        <div class=\"col py-md-2 border bg-light\">53f46ac97c1dab2ecde92f276f78c7a4910e109a</div>\n");
+-  printf("        <div class=\"w-100\"></div>\n");
+-  printf("        <div class=\"col py-md-2 border bg-light\">index.html</div>\n");
+-  printf("        <div class=\"col py-md-2 border bg-light\">28977d219fc715fb8d91d01a4357d30b3a66466b</div>\n");
+-  printf("        <div class=\"w-100\"></div>\n");
+-  printf("        <div class=\"col py-md-2 border bg-light\">upload.html</div>\n");
+-  printf("        <div class=\"col py-md-2 border bg-light\">84954447e5aa934fd9de13590f00ba9ced10b521</div>\n");
+-  printf("      </div>\n");
+-  printf("    </div>\n");
+-  printf("  </body>\n");
++  printf ("  <body>\n");
++  printf ("    <div class=\"container\">\n");
++  printf ("      <br />\n");
++  printf ("      <h2 class=\"mb-0\">Database Records</h2>\n");
++  printf ("      <div class=\"row\">\n");
++  printf ("        <div class=\"col py-md-2 border "
++          "bg-light\">bootstrap.html</div>\n");
++  printf ("        <div class=\"col py-md-2 border "
++          "bg-light\">53f46ac97c1dab2ecde92f276f78c7a4910e109a</div>\n");
++  printf ("        <div class=\"w-100\"></div>\n");
++  printf (
++      "        <div class=\"col py-md-2 border bg-light\">index.html</div>\n");
++  printf ("        <div class=\"col py-md-2 border "
++          "bg-light\">28977d219fc715fb8d91d01a4357d30b3a66466b</div>\n");
++  printf ("        <div class=\"w-100\"></div>\n");
++  printf ("        <div class=\"col py-md-2 border "
++          "bg-light\">upload.html</div>\n");
++  printf ("        <div class=\"col py-md-2 border "
++          "bg-light\">84954447e5aa934fd9de13590f00ba9ced10b521</div>\n");
++  printf ("      </div>\n");
++  printf ("    </div>\n");
++  printf ("  </body>\n");
+ 
+   // TODO [MIN]: Once you have the basic structure working, extend it to
+   // read in environment variables (db, record, hash, and QUERY_STRING).
