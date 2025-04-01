@@ -98,6 +98,50 @@ main ()
   // match, add this code just after the hash value from the database (put
   // a space before the <span and no space between </span></div>):
   //    <span class="badge badge-danger">MISMATCH</span>
+  
+  if(query != NULL) // Query is set
+  {
+  	// If QUERY_STRING is set, use that and split it apart at the & character
+  	char *token;
+  	char *queryptr = strdup(query); // Get a pointer to a copy of query so we can use strtok() on it
+  	const char *delim = "=&";
+
+		token = strtok(queryptr, delim);
+		
+		while(token != NULL)
+		{
+			if(strcmp(token, "db") == 0)
+			{
+				token = strtok(NULL, delim);
+				db = token;
+			}
+			else if(strcmp(token, "record") == 0)
+			{
+				token = strtok(NULL, delim);
+				record = token;
+			}
+			else // token = "hash"
+			{
+				token = strtok(NULL, delim);
+				hash = token;
+			}
+			
+			token = strtok(NULL, delim);
+		}
+		
+		free(queryptr);
+  }
+  else // Query is not set
+  {
+  	if(hash != NULL && record != NULL) // Hash is set and Record is set
+  	{
+  		// If the hash variable is set, compare its value with the hash value for the specified record.
+  		if(strcmp(hash, record) != 0) // Check if they are nnot equal
+  		{
+  			printf("<span class=\"badge badge-danger\">MISMATCH</span>");
+  		}
+  	} 
+  }
 
   printf ("\n</html>\n");
 
