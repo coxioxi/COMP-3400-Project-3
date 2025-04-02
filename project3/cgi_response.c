@@ -27,6 +27,7 @@ char *
 cgi_response (char *uri, char *version, char *method, char *query,
               ssize_t size, char *boundary, char *body)
 {
+	
   // TODO [PART]: If the URI exists and is executable, run it as a separate
   // process, redirecting its STDOUT back to this process. You can then use
   // that resulting string to determine the Content-Length to send back. As
@@ -45,7 +46,34 @@ cgi_response (char *uri, char *version, char *method, char *query,
   //   "<h2>Hello world!</h2>\n"
   //   "</body>\n"
   //   "</html>\n"
-  return strdup ("HTTP/1.0 404 Not Found" CRLF CRLF);
+  
+  char* response = NULL;
+  if (uri != NULL)
+	{
+		int pipes[2];
+		pipe(pipes);
+		pid_t child = fork();
+		
+		if (child < 0)
+		{
+			close(pipes[0]);
+			close(pipes[1]);
+		}
+		
+		if (child == 0)
+		{
+			dup2(pipes[1], STDOUT_FILENO);
+			execl(uri, uri, NULL);
+		}
+		
+		ssize_t length = read(pipes[0], response, size);
+  		
+	}
+	else
+	{
+		response = strdup ("HTTP/1.0 404 Not Found" CRLF CRLF);
+	}
+  return response;
 
   // TODO [FULL]: Set the environment variables needed for the CGI programs
   // located in cgi-bin. To do this, you will need to use either execve()
