@@ -59,7 +59,17 @@ serve_request (int connfd)
   // files, you will need to pipe/fork/dup2/exec the program. Also, note that
   // the query string will need to be passed using an environment variable
   // called "QUERY_STRING".
-  char *response = html_response (uri, version);
+  char *response = NULL;
+  
+  if(strstr(uri, "srv_root"))
+  {
+  	response = html_response (uri, version);
+  }
+  else if (strstr(uri, "cgi-bin"))
+  {
+		response = cgi_response (uri, version, method, query, size, boundary, body);
+  }
+  
   write (connfd, response, strlen (response));
 
   shutdown (connfd, SHUT_RDWR);
@@ -77,8 +87,16 @@ serve_request (int connfd)
 
   // TODO [PART]: If the URI is for the shutdown.cgi file, kill the current
   // process with the SIGUSR1 signal.
+  
+  if (strcmp(uri, "cgi-src/shutdown.cgi"))
+  {
+  	pid_t pid;
+  	pid = getpid();
+  	kill(pid, SIGUSR1);
+  }
   if (uri != NULL)
     free (uri);
 
+	
   return;
 }
