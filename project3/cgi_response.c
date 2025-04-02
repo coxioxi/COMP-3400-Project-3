@@ -66,8 +66,30 @@ cgi_response (char *uri, char *version, char *method, char *query,
 			execl(uri, uri, NULL);
 		}
 		
-		ssize_t length = read(pipes[0], response, size);
+		char buffer[size];
+  	memset (&buffer, 0, size);
   		
+		ssize_t length = read(pipes[0], buffer, size);
+		
+		if (length < 0)
+		{
+			return NULL;
+		}
+		
+		if (!strcmp(version, "HTTP/1.0"))
+		{
+			int size = snprintf(NULL, 0, "%s 200 OK\r\n"
+			 "Content-Type: text/html; charset=UTF-8\r\n"
+			 "Content-Length: %ld\r\n\r\n", version, length);
+			
+			response = malloc(size + 1);
+			
+			snprintf(response, size+1, "%s 200 OK\r\n"
+			 "Content-Type: text/html; charset=UTF-8\r\n"
+			 "Content-Length: %ld\r\n\r\n", version, filesize);
+			 
+		}
+		
 	}
 	else
 	{
