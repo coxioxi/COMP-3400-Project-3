@@ -21,10 +21,10 @@ main ()
   printf ("  </head>\n\n");
   
   // These variables can be read from the environment using getenv().
-  char *db = NULL;
-  char *record = NULL;
-  char *hash = NULL;
-  char *query = NULL;
+  char *db = getenv("db");
+  char *record = getenv("record");
+  char *hash = getenv("hash");
+  char *query = getenv("query");
   // This is an HTML comment. It's useful for debugging to see if your
   // environment variables got through.
   printf ("  <!-- Environment variables:\n");
@@ -53,27 +53,80 @@ main ()
   //        </div>
   //      </div>
   //    </body>
-  
-  int i = 0;
-  
-  FILE *file = fopen("data/data.txt", "r");
-  char nums [1024];
-  char filename [1024];
-  
+    
 	printf("  <body>\n");
   printf("    <div class=\"container\">\n");
   printf("      <br />\n");
   printf("      <h2 class=\"mb-0\">Database Records</h2>\n");
   printf("      <div class=\"row\">\n");
   
+  if(query != NULL) // Query is set
+  {
+  	// If QUERY_STRING is set, use that and split it apart at the & character
+  	char *token;
+  	const char *delim = "=&";
+
+		token = strtok(query, delim);
+		
+		while(token != NULL)
+		{
+			if(strcmp(token, "db") == 0)
+			{
+				db = strtok(NULL, delim);
+			}
+			else if(strcmp(token, "record") == 0)
+			{
+				record = strtok(NULL, delim);
+			}
+			else if(strcmp(token, "hash") == 0)
+			{
+				token = strtok(NULL, delim);
+				hash = token;
+			}
+			
+			token = strtok(NULL, delim);
+		}
+  }
+  
+  if(db == NULL)
+  {
+  	db = "data.txt";
+  }
+
+	char realdb[256] = "data/";
+	strcat(realdb, db);
+	
+  FILE *file = fopen(realdb, "r");
+	char filename [1024];
+  char nums [1024];
+  int i = 0;
+ 
+  int recnum = -1;
+  
+  if(record != NULL)
+  {
+  	recnum = atoi(record);
+  }
+  
+  int total_lines = 0;
+	char temp[256];
+  while (fscanf(file, "%s", temp) == 1)
+    total_lines++;
+
+	rewind(file);
+ 
 	while(fscanf(file, "%s", nums) == 1)
 	{
 			fscanf(file, "%s", filename);
-			
+		
 			printf("        <div class=\"col py-md-2 border bg-light\">%s</div>\n", filename);
-      printf("        <div class=\"col py-md-2 border bg-light\">%s</div>\n", nums);
-      
-      if(i <= 1)
+			
+			if(recnum == i+1 && hash != NULL && strcmp(hash, nums) != 0)
+		  	printf("        <div class=\"col py-md-2 border bg-light\">%s<span class=\"badge badge-danger\">MISMATCH</span>\n", nums);
+      else
+      	printf("        <div class=\"col py-md-2 border bg-light\">%s</div>\n", nums);
+     
+     if(i != total_lines / 2 - 1)
       	printf("        <div class=\"w-100\"></div>\n");
       
       ++i;
@@ -98,51 +151,7 @@ main ()
   // match, add this code just after the hash value from the database (put
   // a space before the <span and no space between </span></div>):
   //    <span class="badge badge-danger">MISMATCH</span>
-  
-  if(query != NULL) // Query is set
-  {
-  	// If QUERY_STRING is set, use that and split it apart at the & character
-  	char *token;
-  	char *queryptr = strdup(query); // Get a pointer to a copy of query so we can use strtok() on it
-  	const char *delim = "=&";
-
-		token = strtok(queryptr, delim);
-		
-		while(token != NULL)
-		{
-			if(strcmp(token, "db") == 0)
-			{
-				token = strtok(NULL, delim);
-				db = token;
-			}
-			else if(strcmp(token, "record") == 0)
-			{
-				token = strtok(NULL, delim);
-				record = token;
-			}
-			else // token = "hash"
-			{
-				token = strtok(NULL, delim);
-				hash = token;
-			}
-			
-			token = strtok(NULL, delim);
-		}
-		
-		free(queryptr);
-  }
-  else // Query is not set
-  {
-  	if(hash != NULL && record != NULL) // Hash is set and Record is set
-  	{
-  		// If the hash variable is set, compare its value with the hash value for the specified record.
-  		if(strcmp(hash, record) != 0) // Check if they are nnot equal
-  		{
-  			printf("<span class=\"badge badge-danger\">MISMATCH</span>");
-  		}
-  	} 
-  }
-
+ 
   printf ("\n</html>\n");
 
   return 0;
