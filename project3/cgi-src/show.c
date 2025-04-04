@@ -24,7 +24,7 @@ main ()
   char *db = getenv("db");
   char *record = getenv("record");
   char *hash = getenv("hash");
-  char *query = getenv("query");
+  char *query = getenv("QUERY_STRING");
   // This is an HTML comment. It's useful for debugging to see if your
   // environment variables got through.
   printf ("  <!-- Environment variables:\n");
@@ -80,8 +80,7 @@ main ()
 			}
 			else if(strcmp(token, "hash") == 0)
 			{
-				token = strtok(NULL, delim);
-				hash = token;
+				hash = strtok(NULL, delim);
 			}
 			
 			token = strtok(NULL, delim);
@@ -107,27 +106,23 @@ main ()
   {
   	recnum = atoi(record);
   }
-  
-  int total_lines = 0;
-	char temp[256];
-  while (fscanf(file, "%s", temp) == 1)
-    total_lines++;
-
-	rewind(file);
  
 	while(fscanf(file, "%s", nums) == 1)
 	{
 			fscanf(file, "%s", filename);
-		
-			printf("        <div class=\"col py-md-2 border bg-light\">%s</div>\n", filename);
 			
-			if(recnum == i+1 && hash != NULL && strcmp(hash, nums) != 0)
-		  	printf("        <div class=\"col py-md-2 border bg-light\">%s<span class=\"badge badge-danger\">MISMATCH</span>\n", nums);
-      else
-      	printf("        <div class=\"col py-md-2 border bg-light\">%s</div>\n", nums);
-     
-     if(i != total_lines / 2 - 1)
+			if(i != 0 && recnum == -1)
       	printf("        <div class=\"w-100\"></div>\n");
+      
+      if(i+1 == recnum || recnum == -1)
+      {	
+				printf("        <div class=\"col py-md-2 border bg-light\">%s</div>\n", filename);
+				
+				if(recnum != -1 && recnum == i+1 && hash != NULL && strcmp(hash, nums) != 0)
+					printf("        <div class=\"col py-md-2 border bg-light\">%s <span class=\"badge badge-danger\">MISMATCH</span></div>\n", nums);
+		    else
+		    	printf("        <div class=\"col py-md-2 border bg-light\">%s</div>\n", nums);
+      }
       
       ++i;
 	}
