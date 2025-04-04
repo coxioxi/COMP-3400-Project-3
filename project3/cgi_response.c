@@ -50,45 +50,77 @@ cgi_response (char *uri, char *version, char *method, char *query,
   char* response = NULL;
   if (uri != NULL)
 	{
+	
 		int pipes[2];
 		pipe(pipes);
 		pid_t child = fork();
 		
-		if (child < 0)
-		{
-			close(pipes[0]);
-			close(pipes[1]);
-		}
 		
 		if (child == 0)
 		{
+			close(pipes[0]);
 			dup2(pipes[1], STDOUT_FILENO);
+			/*
+			if (!strcmp(method, "GET"))
+			{
+			char* token = strtok(query, '&');
+			char* db = token;
+			
+			token = strtok(query, '\0');
+			char* record = token;
+			
+			char *env[] = { db, record, NULL };
+			
+			execle(uri, uri, NULL, env);
+			}*/
 			execl(uri, uri, NULL);
+			exit(1);
 		}
 		
-		char buffer[size];
-  	memset (&buffer, 0, size);
-  		
-		ssize_t length = read(pipes[0], buffer, size);
+		close(pipes[1]);
 		
-		if (length < 0)
+		char buffer[BUFFER_LENGTH];
+  	memset (&buffer, 0, BUFFER_LENGTH);
+  		
+		ssize_t bytes = read(pipes[0], buffer, BUFFER_LENGTH);
+		
+		if (bytes < 0)
 		{
 			return NULL;
 		}
+		ssize_t length;
 		
 		if (!strcmp(version, "HTTP/1.0"))
 		{
-			int size = snprintf(NULL, 0, "%s 200 OK\r\n"
-			 "Content-Type: text/html; charset=UTF-8\r\n"
-			 "Content-Length: %ld\r\n\r\n", version, length);
-			
-			response = malloc(size + 1);
-			
-			snprintf(response, size+1, "%s 200 OK\r\n"
-			 "Content-Type: text/html; charset=UTF-8\r\n"
-			 "Content-Length: %ld\r\n\r\n", version, filesize);
-			 
+			length = snprintf(NULL, 0, "%s 200 OK\r\n"
+			"Content-Type: text/html; charset=UTF-8\r\n"
+			"Content-Length: %ld\r\n\r\n", version, bytes);
+				
+			response = malloc(length + 1);
+				
+			snprintf(response, length+1, "%s 200 OK\r\n"
+			"Content-Type: text/html; charset=UTF-8\r\n"
+			"Content-Length: %ld\r\n\r\n", version, bytes);
 		}
+		else if (!strcmp(version, "HTTP/1.1"))
+		{
+			length = snprintf(NULL, 0, "%s 200 OK\r\n"
+			"Content-Type: text/html; charset=UTF-8\r\n"
+			"Content-Length: %ld\r\n"
+			"Connection: close\r\n\r\n", version, bytes);
+				
+			response = malloc(length + 1);
+				
+			snprintf(response, length+1, "%s 200 OK\r\n"
+			"Content-Type: text/html; charset=UTF-8\r\n"
+			"Content-Length: %ld\r\n"
+			"Connection: close\r\n\r\n", version, bytes);
+		}
+		char contents[BUFFER_LENGTH];
+		strcpy(contents, buffer);
+		
+		response = realloc(response, length + bytes + 1);
+		response = strncat(response, contents, length + bytes + 1);
 		
 	}
 	else
@@ -109,4 +141,5 @@ cgi_response (char *uri, char *version, char *method, char *query,
   // variable to be the query parameter. For POST requests, you will need
   // to look through the body of the HTTP request, splitting based on the
   // boundary values (see the project description for an example).
+  
 }
