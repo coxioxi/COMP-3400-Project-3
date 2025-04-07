@@ -55,26 +55,35 @@ cgi_response (char *uri, char *version, char *method, char *query,
 		pipe(pipes);
 		pid_t child = fork();
 		
-		
 		if (child == 0)
 		{
 			close(pipes[0]);
 			dup2(pipes[1], STDOUT_FILENO);
-			/*
+			
 			if (!strcmp(method, "GET"))
 			{
-			char* token = strtok(query, '&');
-			char* db = token;
+				if (query)
+				{
+					char *env = getenv ("QUERY_STRING");
+					char queryString[1024]; 
+					strcpy(queryString, "QUERY_STRING=");
+					strcat(queryString, query);
+					execle(queryString, queryString, NULL, env);
+				}
+				else
+				{
+					execl(uri, uri, NULL);
+				}
+			}
 			
-			token = strtok(query, '\0');
-			char* record = token;
-			
-			char *env[] = { db, record, NULL };
-			
-			execle(uri, uri, NULL, env);
-			}*/
-			execl(uri, uri, NULL);
+			else if (!strcmp(method, "POST"))
+			{
+				
+				
+			}
+			//execl(uri, uri, NULL);
 			exit(1);
+			
 		}
 		
 		close(pipes[1]);
