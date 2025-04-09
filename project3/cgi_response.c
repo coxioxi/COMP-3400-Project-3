@@ -60,6 +60,10 @@ cgi_response (char *uri, char *version, char *method, char *query,
 			close(pipes[0]);
 			dup2(pipes[1], STDOUT_FILENO);
 			
+			/*
+			if method is "GET":
+       Use query as the value of the QUERY_STRING environment variable.
+      */
 			if (!strcmp(method, "GET"))
 			{
 				if (query)
@@ -77,57 +81,72 @@ cgi_response (char *uri, char *version, char *method, char *query,
 				}
 			}
 			
+			/*
+			if method is "POST":
+		    Use boundary to split the body of the request (see the project
+		    page for an example). The size parameter is only used if the POST
+		    request is for uploading a file, and is the size of the data to
+		    be uploaded.
+      */
 			else if (!strcmp(method, "POST"))
 			{
-				char** name = malloc(sizeof(char*) * 10);
-				char** db = malloc(sizeof(char*) * 10);
-				int count = 0;
+			
+				char* db = NULL;
+				char* hash = NULL;
+				char* record = NULL;
 				char* string = NULL;
 				char* current = NULL;
 				
-				boundary = strstr(boundary, "Content-Disposition: ");
-				string = strstr(boundary, "\n\n");
-				int size = strlen(boundary) - strlen(string);
+				string = strstr(body, boundary);
+				string += strlen(boundary);
+				string = strstr(string, "name=\"");
 				
-				current = strndup( boundary, size);
+				intptr_t  start;
+				intptr_t  end;
 				
 				char* token = NULL;
+				char* type = NULL;
 				
-				while (boundary)
+				while (string)
 				{
-					string = strstr(boundary, "\n\n");
-					size = strlen(boundary) - strlen(string);
-				
-					current = strndup( boundary, size);
+					token = strdup(string+6);
+					start = (intptr_t) string + 6;
+					string = strstr(string, "\"\r\n");
+					end = (intptr_t)  string;
 					
-					boundary = strstr(boundary, ": ");
-					string = strstr(boundary, "; ");
-					size = strlen(boundary) - strlen(string);
-					token = strndup( boundary, size);
+					type = strndup(token, (size_t) end-start);
+					//printf("Current: %s\n", current);
 					
-					db[count] = malloc(strlen(token));
-					db[count] = strdup(token+2);
-					//printf("db =%s\n", db[count]);
+					string = strstr(string, "\r\n\r\n");
+					token = strdup(string+4);
+					start = (intptr_t) string + 4;
+					string += 4;
+					string = strstr(string, "\r\n");
+					end = (intptr_t) string;
 					
-					boundary = strstr(boundary, "\"");
-					string = strstr(boundary, "\"\n");
-					size = strlen(boundary) - strlen(string);
-					token = strndup( boundary, size);
+					current = strndup(token, (size_t) end-start);
+					//printf("Current: %s\n", current);
 					
-					name[count] = malloc(strlen(token));
-					name[count] = strdup(token+1);
-					//printf("name =%s\n", name[count]);
+					if(!strcmp(type, "db"))
+					{
+						db = malloc(3+strlen(current)+1);
+						snprintf(db, 3+strlen(current)+1, "db=%s", current);
+					}
+					else if(!strcmp(type, "hash"))
+					{
+						hash = malloc(5+strlen(current)+1);
+						snprintf(db, 5+strlen(current)+1, "hash=%s", current);
+					}
+					else
+					{
+						record = malloc(7+strlen(current)+1);
+						snprintf(record, 7+strlen(current)+1, "record=%s", current);
+					}
 					
-					++count;
-					
-					boundary = strstr(boundary, "Content-Disposition: ");
+					string = strstr(string, "name=\"");
 				}
 				
-				char* record = NULL;
-				ssize_t n = snprintf(NULL, 0, "record=%d", count);
-				snprintf(record, n, "record=%d", count);
-				
-				char *env[] = { db, record, NULL };
+				char *env[] = { db, record, hash };
 				execle(uri, uri, NULL, env);
 			}
 			//execl(uri, uri, NULL);
