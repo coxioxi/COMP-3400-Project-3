@@ -64,11 +64,12 @@ cgi_response (char *uri, char *version, char *method, char *query,
 			{
 				if (query)
 				{
-					char *env = getenv ("QUERY_STRING");
+				
 					char queryString[1024]; 
 					strcpy(queryString, "QUERY_STRING=");
 					strcat(queryString, query);
-					execle(queryString, queryString, NULL, env);
+					char *env[] = { queryString, NULL };
+					execle(uri, uri, NULL, env);
 				}
 				else
 				{
@@ -78,8 +79,56 @@ cgi_response (char *uri, char *version, char *method, char *query,
 			
 			else if (!strcmp(method, "POST"))
 			{
+				char** name = malloc(sizeof(char*) * 10);
+				char** db = malloc(sizeof(char*) * 10);
+				int count = 0;
+				char* string = NULL;
+				char* current = NULL;
 				
+				boundary = strstr(boundary, "Content-Disposition: ");
+				string = strstr(boundary, "\n\n");
+				int size = strlen(boundary) - strlen(string);
 				
+				current = strndup( boundary, size);
+				
+				char* token = NULL;
+				
+				while (boundary)
+				{
+					string = strstr(boundary, "\n\n");
+					size = strlen(boundary) - strlen(string);
+				
+					current = strndup( boundary, size);
+					
+					boundary = strstr(boundary, ": ");
+					string = strstr(boundary, "; ");
+					size = strlen(boundary) - strlen(string);
+					token = strndup( boundary, size);
+					
+					db[count] = malloc(strlen(token));
+					db[count] = strdup(token+2);
+					//printf("db =%s\n", db[count]);
+					
+					boundary = strstr(boundary, "\"");
+					string = strstr(boundary, "\"\n");
+					size = strlen(boundary) - strlen(string);
+					token = strndup( boundary, size);
+					
+					name[count] = malloc(strlen(token));
+					name[count] = strdup(token+1);
+					//printf("name =%s\n", name[count]);
+					
+					++count;
+					
+					boundary = strstr(boundary, "Content-Disposition: ");
+				}
+				
+				char* record = NULL;
+				ssize_t n = snprintf(NULL, 0, "record=%d", count);
+				snprintf(record, n, "record=%d", count);
+				
+				char *env[] = { db, record, NULL };
+				execle(uri, uri, NULL, env);
 			}
 			//execl(uri, uri, NULL);
 			exit(1);
@@ -89,7 +138,7 @@ cgi_response (char *uri, char *version, char *method, char *query,
 		close(pipes[1]);
 		
 		char buffer[BUFFER_LENGTH];
-  	memset (&buffer, 0, BUFFER_LENGTH);
+  		memset (&buffer, 0, BUFFER_LENGTH);
   		
 		ssize_t bytes = read(pipes[0], buffer, BUFFER_LENGTH);
 		
@@ -129,7 +178,7 @@ cgi_response (char *uri, char *version, char *method, char *query,
 		strcpy(contents, buffer);
 		
 		response = realloc(response, length + bytes + 1);
-		response = strncat(response, contents, length + bytes + 1);
+		strncat(response, contents, length + bytes + 1);
 		
 	}
 	else
